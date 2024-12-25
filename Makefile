@@ -45,7 +45,7 @@ SRC_EXTENSION := .java
 CLASS_EXTENSION := .class
 
 # Directories
-SRCDIR := app/
+SRCDIR :=
 BUILDDIR := build/
 BINDIR := bin/
 
@@ -56,7 +56,6 @@ ARGS :=
 
 # Files
 SRCS := $(call rwildcard,$(SRCDIR),*$(SRC_EXTENSION))
-ALL_OBJS := $(call rwildcard,$(BUILDDIR),*$(CLASS_EXTENSION))
 DIRS := $(sort $(dir $(SRCS)))
 OBJECT_DIRS := $(DIRS:$(SRCDIR)%=$(CLASSDIR)%)
 EXECUTABLE := $(BINDIR)$(JARNAME).jar
@@ -65,7 +64,8 @@ EXECUTABLE := $(BINDIR)$(JARNAME).jar
 DEBUG := $(TRUE)
 
 # Processed files
-CLASSES := $(call map,makeclass,$(SRCS))
+CLASSES = $(call rwildcard,$(BUILDDIR),*$(CLASS_EXTENSION))
+COMPILED_CLASSES := $(call map,makeclass,$(SRCS))
 
 run: $(EXECUTABLE)
 	@$(call ECHO,RUNNING $(EXECNAME))
@@ -74,9 +74,9 @@ run: $(EXECUTABLE)
 	@java -jar $(EXECUTABLE) $(ARGS)
 .PHONY: run
 
-$(EXECUTABLE): $(CLASSES)
+$(EXECUTABLE): $(COMPILED_CLASSES)
 	@$(call ECHO,LINKING $(EXECNAME))
-	@cd $(BUILDDIR) && jar -c -e $(MAIN_CLASS) -f ../$(EXECUTABLE) $(patsubst $(BUILDDIR)%,$(SRCDIR)%,$^)
+	@cd $(BUILDDIR) && jar -c -e $(MAIN_CLASS) -f ../$(EXECUTABLE) $(patsubst $(BUILDDIR)%,%,$(CLASSES))
 
 build: $(EXECUTABLE)
 .PHONY: build
@@ -85,8 +85,8 @@ all: build
 .PHONY: all
 
 clean:
-	@echo RM $(ALL_OBJS)
-	@$(foreach o,$(ALL_OBJS),$(call REMOVE,$o))
+	@echo RM $(CLASSES)
+	@$(foreach o,$(CLASSES),$(call REMOVE,$o))
 .PHONY: clean
 
 $(BUILDDIR)%.class: $(SRCDIR)%.java
